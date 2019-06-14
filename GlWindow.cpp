@@ -4,11 +4,14 @@
 #include <fstream>
 #include <iostream>
 
+const GLuint numTriangles = 2;
+
 // vertex position
 struct Position {
 
 	GLfloat x, y, z;
 
+	Position(): x(0.0f), y(0.0f), z(0.0f) {}
 	Position(GLfloat x, GLfloat y, GLfloat z) : x(x), y(y), z(z) {}
 };
 
@@ -17,6 +20,7 @@ struct Color {
 
 	GLfloat r, g, b;
 
+	Color() : r(0.0f), g(0.0f), b(0.0f) {}
 	Color(GLfloat r, GLfloat g, GLfloat b): r(r), g(g), b(b) {}
 };
 
@@ -24,38 +28,20 @@ struct Color {
 const GLint POSITION_SIZE = sizeof(Position) / sizeof(GLfloat);
 const GLint COLOR_SIZE = sizeof(Color) / sizeof(GLfloat);
 
-void GlWindow::sendDataToOpenGL() {
+// size is the number of unique vertices that we will draw
+// num is the total number of vertices, so for numTriangles = 3, num = 3*3 = 9
+void GlWindow::sendDataToOpenGL(Position *positions, GLsizeiptr size, GLuint num) {
 
-	// set the depth value of the two triangles
-	const GLfloat RED_DEPTH = 0.5f;
-	const GLfloat BLUE_DEPTH = -0.5f;
-
-	// set the vertices of the triangle and also their colors
-	Position positions[] =
-	{	
-		Position(0.0f, 1.0f, -1.0f),
-		Position(-1.0f, -1.0f, RED_DEPTH),
-		Position(1.0f, -1.0f, RED_DEPTH),
-		Position(1.0f, 1.0f, BLUE_DEPTH),
-		Position(0.0f, 1.0f, BLUE_DEPTH),
-		Position(0.0f, -1.0f, BLUE_DEPTH)
-	};
-
-	Color colors[] =
-	{
-		Color(0.0f, 0.0f, 1.0f),
-		Color(1.0f, 0.0f, 0.0f),
-		Color(1.0f, 0.0f, 0.0f),
-		Color(0.0f, 0.0f, 1.0f),
-		Color(0.0f, 0.0f, 1.0f),
-		Color(0.0f, 0.0f, 1.0f)
-	};
+	Color* colors = new Color[size];
+	for (GLsizeiptr i = 0; i < size; ++i) {
+		colors[i] = Color(1.0f, 0.9f, 0.0f);
+	}
 
 	// reserve some space for the positions buffer on the graphics card
 	glGenBuffers(1, &vertexPositionBufferId);
 	// read in the positions information
 	glBindBuffer(GL_ARRAY_BUFFER, vertexPositionBufferId);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, size * sizeof(Position), positions, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, POSITION_SIZE, GL_FLOAT, GL_FALSE, 0, 0);
 
@@ -63,7 +49,7 @@ void GlWindow::sendDataToOpenGL() {
 	glGenBuffers(1, &vertexColorBufferId);
 	// read in the colors information
 	glBindBuffer(GL_ARRAY_BUFFER, vertexColorBufferId);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, size * sizeof(Color), colors, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, COLOR_SIZE, GL_FLOAT, GL_FALSE, 0, 0);
 
@@ -71,9 +57,21 @@ void GlWindow::sendDataToOpenGL() {
 	glGenBuffers(1, &indexBufferId);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferId);
 
-	GLubyte indices[] = { 0,1,2, 3,4,5 };
+	// generate the indices
+	GLubyte *indices = new GLubyte[num];
+	indices[0] = 0; indices[1] = 1; indices[2] = 2;
+	
+	for (GLuint i = 3; i < num; ++i) {
+		if (i % 3 == 0)
+			indices[i] = indices[i - 1];
+		else
+			indices[i] = indices[i - 1] + 1;
+	}
 
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, num * sizeof(GLbyte), indices, GL_STATIC_DRAW);
+
+	delete[] colors;
+	delete[] indices;
 }
 
 std::string GlWindow::readShaderCode(const GLchar* fileName) {
@@ -180,7 +178,37 @@ void GlWindow::initializeGL()
 	assert(error == 0);
 
 	glEnable(GL_DEPTH_TEST);  // enable depth test
-	sendDataToOpenGL();
+	// set the depth value of the two triangles
+	const GLfloat DEPTH = 0.0f;
+
+	GLfloat base = 2 / (GLfloat)numTriangles;
+
+	Position* positions = new Position[3];  // represents one triangle
+	Position* all_positions = new Position[2 * numTriangles + 1];  // represents all triangles, some positions will be re-used
+	GLuint a = 0;  // index for all positions
+
+	positions[2] = Position(-1.0f, 1.0f, DEPTH);
+	for (GLuint i = 0; i < numTriangles; ++i) {
+
+		positions[0] = positions[2];
+		positions[1] = Position(-1.0f + i * base, 0.0f, DEPTH);
+		positions[2] = Position(-1.0f + (i + 1) * base, 1.0f, DEPTH);
+
+		if (i == 0) {
+			// push all 3 in
+			all_positions[a++] = positions[0]; all_positions[a++] = positions[1]; all_positions[a++] = positions[2];
+		}
+		else {
+			// push only 1 and 2 in
+			all_positions[a++] = positions[1]; all_positions[a++] = positions[2];
+		}
+	}
+
+	sendDataToOpenGL(all_positions, 2 * numTriangles + 1, 3 * numTriangles);
+
+	delete[] positions;
+	delete[] all_positions;
+
 	installShaders();
 }
 
@@ -188,5 +216,5 @@ void GlWindow::paintGL()
 {	
 	glClear(GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, width(), height());
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, 0);
+	glDrawElements(GL_TRIANGLES, 3 * numTriangles, GL_UNSIGNED_BYTE, 0);
 }

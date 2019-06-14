@@ -6,6 +6,8 @@
 typedef void (*lengthHandler)(GLuint, GLenum, GLint*);
 typedef void (*infoLogHandler)(GLuint, GLsizei, GLsizei*, GLchar*);
 
+struct Position;
+
 class GlWindow : public QOpenGLWidget
 {	
 	Q_OBJECT;
@@ -14,7 +16,7 @@ class GlWindow : public QOpenGLWidget
 	GLuint vertexColorBufferId;
 	GLuint indexBufferId;
 
-	void sendDataToOpenGL();
+	void sendDataToOpenGL(Position*, GLsizeiptr, GLuint);
 	void installShaders();
 	std::string readShaderCode(const GLchar*);
 
