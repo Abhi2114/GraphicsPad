@@ -1,53 +1,91 @@
 #include <GL/glew.h>
-#include "GlWindow.h"
+#include <gtc/matrix_transform.hpp>
 #include <cassert>
 #include <fstream>
 #include <iostream>
+#include "GlWindow.h"
+#include "Primitives/Vertex.h"
+#include "Primitives/ShapeGenerator.h"
 
-const GLfloat X_DELTA = 0.1f;
-GLuint numTriangles = 0;
-const GLuint MAX_TRIANGLES = 5;
+using glm::mat4;
+using glm::mat3;
+using glm::vec4;
+
+GLuint programId;
+GLubyte numIndices;
+
+GLfloat angle = 30.0f;
+
+const GLfloat pi = 3.14159;
+
+vec3 center = vec3(0.0f, 0.0f, 0.0f);
+vec3 eye = vec3(0.0f, 0.0f, 0.0f);
+vec3 up = vec3(0.0f, 1.0f, 0.0f);
 
 void GlWindow::sendDataToOpenGL() {
+
+	ShapeData *cube = ShapeGenerator::makeCube();
 
 	// reserve some space for the positions buffer on the graphics card
 	glGenBuffers(1, &vertexPositionBufferId);
 	// read in the positions information
 	glBindBuffer(GL_ARRAY_BUFFER, vertexPositionBufferId);
-	glBufferData(GL_ARRAY_BUFFER, MAX_TRIANGLES * 72, NULL, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, cube->positionBufferSize(), cube->positionData(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
+	// reserve some space for the colors buffer on the graphics card
+	glGenBuffers(1, &vertexColorBufferId);
+	// read in the colors information
+	glBindBuffer(GL_ARRAY_BUFFER, vertexColorBufferId);
+	glBufferData(GL_ARRAY_BUFFER, cube->colorBufferSize(), cube->colorData(), GL_STATIC_DRAW);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+	// specify indices of the vertex array to draw
+	glGenBuffers(1, &indexBufferId);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferId);
+
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, cube->indexBufferSize(), cube->indexData(), GL_STATIC_DRAW);
+
+	numIndices = cube->getNumIndices();
+	delete cube;  // calls the destructor defined in ShapeData
 }
 
-void GlWindow::sendTriangleToGl() {
-
-	const GLfloat THIS_TRI_X = -1.0f + numTriangles * X_DELTA;
-
-	// store position and color information of the vertex
-	GLfloat triangle[] = {
-
-		THIS_TRI_X, 1.0f, 0.0f,
-		1.0f, 0.0f, 0.0f,
-
-		THIS_TRI_X + X_DELTA, 1.0f, 0.0f,
-		1.0f, 0.0f, 0.0f,
-
-		THIS_TRI_X, 0.0f, 0.0f,
-		1.0f, 0.0f, 0.0f
-	};
-
-	glBufferSubData(GL_ARRAY_BUFFER, numTriangles * sizeof(triangle), sizeof(triangle), triangle);
-	numTriangles++;
-}
+vec3 translate1(2.0f, 0.0f, -3.0f);
+vec3 translate2(-2.0f, 0.0f, -3.0f);
 
 void GlWindow::paintGL()
 {
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	glViewport(0, 0, width(), height());
-	sendTriangleToGl();
-	// glDrawArrays(GL_TRIANGLES, (numTriangles - 1) * 3, 3);
-	glDrawArrays(GL_TRIANGLES, 0, numTriangles * 3);
+
+	// prepare matrices to send to the vertex shader
+	mat4 projectionMatrix = glm::perspective(glm::radians(100.0f), float(width()) / height(), 0.1f, 10.0f);
+	mat4 projectionTranslationMatrix = glm::translate(projectionMatrix, translate1);
+	mat4 fullTransformMatrix = glm::rotate(projectionTranslationMatrix, glm::radians(angle), vec3(1.0f, 0.0f, 0.0f));
+	// mat4 lookAtMatrix = glm::lookAt(eye, center, up);
+
+	GLint fullTransformMatrixUniformLocation =
+		glGetUniformLocation(programId, "fullTransformMatrix");
+	// GLint lookAtMatrixUniformLocation = glGetUniformLocation(programId, "lookAtMatrix");
+
+	glUniformMatrix4fv(fullTransformMatrixUniformLocation, 1, GL_FALSE, &fullTransformMatrix[0][0]);
+	// glUniformMatrix4fv(lookAtMatrixUniformLocation, 1, GL_FALSE, &lookAtMatrix[0][0]);
+
+	glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_BYTE, 0);
+
+	projectionTranslationMatrix = glm::translate(projectionMatrix, translate2);
+	fullTransformMatrix = glm::rotate(projectionTranslationMatrix, glm::radians(angle), vec3(1.0f, 0.0f, 0.0f));
+
+	glUniformMatrix4fv(fullTransformMatrixUniformLocation, 1, GL_FALSE, &fullTransformMatrix[0][0]);
+	glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_BYTE, 0);
+	/*	
+		// move the camera about the cube
+		vec3 c = glm::normalize(glm::cross(up, eye));
+		eye = rotate(30.0f, c) * eye;
+		up = rotate(30.0f, c) * up;
+	*/
 }
 
 std::string GlWindow::readShaderCode(const GLchar* fileName) {
@@ -99,10 +137,14 @@ void GlWindow::installShaders() {
 	}
 
 	// link the program
-	GLuint programId = glCreateProgram();
+	programId = glCreateProgram();
 	glAttachShader(programId, vertexShaderId);
 	glAttachShader(programId, fragmentShaderId);
 	glLinkProgram(programId);
+
+	// delete the obj files for the shaders once we have created the program
+	glDeleteShader(vertexShaderId);
+	glDeleteShader(fragmentShaderId);
 
 	// check if the program linked correctly or not
 	GLint linkStatus = getShaderLinkStatus(programId);
@@ -156,4 +198,10 @@ void GlWindow::initializeGL()
 	glEnable(GL_DEPTH_TEST);  // enable depth test
 	sendDataToOpenGL();
 	installShaders();
+}
+
+GlWindow::~GlWindow() {
+	// delete the shader program
+	glUseProgram(0);
+	glDeleteProgram(programId);
 }

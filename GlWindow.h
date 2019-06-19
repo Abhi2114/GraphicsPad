@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QtWidgets/qopenglwidget.h>
+#include <QtCore/qtimer.h>
 #include <string>
 
 typedef void (*lengthHandler)(GLuint, GLenum, GLint*);
@@ -14,6 +15,8 @@ class GlWindow : public QOpenGLWidget
 	GLuint vertexColorBufferId;
 	GLuint indexBufferId;
 
+	QTimer timer;
+
 	void sendDataToOpenGL();
 	void installShaders();
 	std::string readShaderCode(const GLchar*);
@@ -22,8 +25,10 @@ class GlWindow : public QOpenGLWidget
 	GLint getShaderLinkStatus(GLuint& shaderId);
 	void showShaderErrorLog(GLuint& shaderId, lengthHandler, infoLogHandler);
 
-	void sendTriangleToGl();
 protected:
-	void initializeGL();
-	void paintGL();
+	void initializeGL() override;
+	void paintGL() override;
+
+public:
+	~GlWindow();
 };

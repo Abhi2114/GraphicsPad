@@ -109,7 +109,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\abhin\source\repos\OpenGL\Middleware\Qt\include;%(AdditionalIncludeDirectories);C:\Users\abhin\source\repos\OpenGL\Middleware\glew\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\abhin\source\repos\OpenGL\Middleware\Qt\include;%(AdditionalIncludeDirectories);C:\Users\abhin\source\repos\OpenGL\Middleware\glew\include;C:\Users\abhin\source\repos\OpenGL\Middleware\glm</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -160,9 +160,13 @@
     <ClCompile Include="GlWindow.cpp" />
     <ClCompile Include="GlWindow_moc.cpp" />
     <ClCompile Include="GraphicsPad.cpp" />
+    <ClCompile Include="Primitives\ShapeGenerator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GlWindow.h" />
+    <ClInclude Include="Primitives\ShapeData.h" />
+    <ClInclude Include="Primitives\Vertex.h" />
+    <ClInclude Include="Primitives\ShapeGenerator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="FragmentShader.glsl" />
