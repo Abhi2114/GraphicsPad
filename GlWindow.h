@@ -12,7 +12,7 @@ class GlWindow : public QOpenGLWidget
 	Q_OBJECT;
 
 	GLuint vertexPositionBufferId;
-	GLuint vertexColorBufferId;
+	GLuint vertexOffsetBufferId;
 	GLuint indexBufferId;
 
 	QTimer timer;
