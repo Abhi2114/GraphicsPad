@@ -115,7 +115,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Users\abhin\source\repos\OpenGL\Middleware\Qt\lib;%(AdditionalLibraryDirectories);C:\Users\abhin\source\repos\OpenGL\Middleware\glew\lib\Release\x64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glew32.lib;glew32s.lib;Qt5Cored.lib;Qt5OpenGLd.lib;Qt5Widgetsd.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Qt5Guid.lib;Qt5Qmld.lib;Qt5Cored.lib;Qt53DInputd.lib;opengl32.lib;glew32.lib;glew32s.lib;Qt5OpenGLd.lib;Qt5Widgetsd.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -157,12 +157,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="GlWindow.cpp" />
     <ClCompile Include="GlWindow_moc.cpp" />
     <ClCompile Include="GraphicsPad.cpp" />
     <ClCompile Include="Primitives\ShapeGenerator.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="GlWindow.h" />
     <ClInclude Include="Primitives\ShapeData.h" />
     <ClInclude Include="Primitives\Vertex.h" />

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <QtWidgets/qopenglwidget.h>
-#include <QtCore/qtimer.h>
 #include <string>
+#include "Camera.h"
 
 typedef void (*lengthHandler)(GLuint, GLenum, GLint*);
 typedef void (*infoLogHandler)(GLuint, GLsizei, GLsizei*, GLchar*);
@@ -12,10 +12,11 @@ class GlWindow : public QOpenGLWidget
 	Q_OBJECT;
 
 	GLuint vertexPositionBufferId;
-	GLuint vertexOffsetBufferId;
+	GLuint vertexColorBufferId;
+	GLuint vertexTranslateBufferId;
 	GLuint indexBufferId;
 
-	QTimer timer;
+	Camera camera;
 
 	void sendDataToOpenGL();
 	void installShaders();
@@ -28,6 +29,7 @@ class GlWindow : public QOpenGLWidget
 protected:
 	void initializeGL() override;
 	void paintGL() override;
+	void mouseMoveEvent(QMouseEvent*) override;
 
 public:
 	~GlWindow();

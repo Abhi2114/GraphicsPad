@@ -1,12 +1,14 @@
 #version 330
 
-in layout(location=0) vec2 position;
-in layout(location=1) float offset;
+in layout(location=0) vec3 position;
+in layout(location=1) vec3 color;
+in layout(location=2) mat4 fullTransformMatrix;
 
 out vec3 vertexColor;
 
 void main()
 {
-	gl_Position = vec4(position.x + offset, position.y, 0.0, 1.0);
-	vertexColor = vec3(0.0f, 1.0f, 0.0f);
+	vec4 v = vec4(position, 1.0);
+	gl_Position = fullTransformMatrix * v;
+	vertexColor = color;
 }
