@@ -39,8 +39,8 @@ public:
 
 	~ShapeData() { 
 		delete[] positions;
-		delete[] colors;
 		delete[] indices;
+		delete[] colors;
 	}
 
 	friend class ShapeGenerator;

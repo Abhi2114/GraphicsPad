@@ -30,6 +30,7 @@ protected:
 	void initializeGL() override;
 	void paintGL() override;
 	void mouseMoveEvent(QMouseEvent*) override;
+	void keyPressEvent(QKeyEvent*) override;
 
 public:
 	~GlWindow();

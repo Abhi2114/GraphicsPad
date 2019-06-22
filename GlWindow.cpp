@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <Qt3DInput/qmouseevent.h>
+#include <Qt3DInput/qkeyevent.h>
 #include "GlWindow.h"
 #include "Primitives/Vertex.h"
 #include "Primitives/ShapeGenerator.h"
@@ -15,17 +16,17 @@ using glm::vec4;
 
 GLuint programId;
 GLubyte numIndices;
-GLuint numCubes = 2;
+GLuint numCubes = 3;
 
 void GlWindow::sendDataToOpenGL() {
 
-	ShapeData* cube = ShapeGenerator::makeCube();
+	ShapeData* arrow = ShapeGenerator::makeArrow();
 
 	// reserve some space for the positions buffer on the graphics card
 	glGenBuffers(1, &vertexPositionBufferId);
 	// read in the positions information
 	glBindBuffer(GL_ARRAY_BUFFER, vertexPositionBufferId);
-	glBufferData(GL_ARRAY_BUFFER, cube->positionBufferSize(), cube->positionData(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, arrow->positionBufferSize(), arrow->positionData(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
@@ -33,7 +34,7 @@ void GlWindow::sendDataToOpenGL() {
 	glGenBuffers(1, &vertexColorBufferId);
 	// read in the colors information
 	glBindBuffer(GL_ARRAY_BUFFER, vertexColorBufferId);
-	glBufferData(GL_ARRAY_BUFFER, cube->colorBufferSize(), cube->colorData(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, arrow->colorBufferSize(), arrow->colorData(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
@@ -51,10 +52,10 @@ void GlWindow::sendDataToOpenGL() {
 	glGenBuffers(1, &indexBufferId);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferId);
 
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, cube->indexBufferSize(), cube->indexData(), GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, arrow->indexBufferSize(), arrow->indexData(), GL_STATIC_DRAW);
 
-	numIndices = cube->getNumIndices();
-	delete cube;  // calls the destructor defined in ShapeData
+	numIndices = arrow->getNumIndices();
+	delete arrow;  // calls the destructor defined in ShapeData
 }
 
 void GlWindow::paintGL()
@@ -68,6 +69,7 @@ void GlWindow::paintGL()
 	mat4 translates[] = {
 			projectionMatrix * camera.getWorldToViewMatrix() * glm::translate(vec3(-1.0f, 0.0f, -3.0f)) * glm::rotate(glm::radians(36.0f), vec3(1.0f, 0.0f, 0.0f)),
 			projectionMatrix * camera.getWorldToViewMatrix() * glm::translate(vec3(1.0f, 0.0f, -3.75f)) * glm::rotate(glm::radians(126.0f), vec3(0.0f, 1.0f, 0.0f)),
+			projectionMatrix* camera.getWorldToViewMatrix() * glm::translate(vec3(-3.0f, 1.0f, -2.75f)) * glm::rotate(glm::radians(26.0f), vec3(0.0f, 0.0f, 1.0f))
 	};
 	glBufferData(GL_ARRAY_BUFFER, sizeof(translates), translates, GL_DYNAMIC_DRAW);
 
@@ -79,6 +81,39 @@ void GlWindow::mouseMoveEvent(QMouseEvent* e) {
 	glm::vec2 newPosition = glm::vec2(e->x(), e->y());
 	camera.mouseUpdate(newPosition);
 	repaint();
+}
+
+void GlWindow::keyPressEvent(QKeyEvent* e) {
+	
+	bool shouldRepaint = true;
+
+	switch (e->key()) {
+
+	case Qt::Key::Key_W:
+		camera.moveForward();
+		break;
+	case Qt::Key::Key_S:
+		camera.moveBackward();
+		break;
+	case Qt::Key::Key_A:
+		camera.strafeLeft();
+		break;
+	case Qt::Key::Key_D:
+		camera.strafeRight();
+		break;
+	case Qt::Key::Key_R:
+		camera.moveUp();
+		break;
+	case Qt::Key::Key_F:
+		camera.moveDown();
+		break;
+	default:
+		shouldRepaint = false;
+		break;
+	}
+
+	if (shouldRepaint)
+		repaint();
 }
 
 std::string GlWindow::readShaderCode(const GLchar * fileName) {
