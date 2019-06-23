@@ -7,7 +7,6 @@ class Camera
 	glm::vec3 eye;
 	glm::vec3 viewDirection;
 	glm::vec2 oldMousePosition;
-	float totalDegrees;
 	glm::vec3 up;
 	const float MOVEMENT_SPEED;
 

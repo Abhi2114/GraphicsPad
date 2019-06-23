@@ -20,14 +20,8 @@ void Camera::mouseUpdate(const glm::vec2& newMousePosition) {
 
 	if (glm::length(delta) < 50.0f) {
 
-		// rotate viewDirection and up along the new axis
-		glm::mat4 rotateVertical = glm::rotate(glm::radians(-delta.y) * ROTATIONAL_SPEED, glm::cross(viewDirection, up));
-
-		viewDirection =  rotateVertical * glm::vec4(viewDirection, 1.0f);
-		up = rotateVertical * glm::vec4(up, 1.0f);
-
-		// rotate the view about the new up vector
 		viewDirection = glm::rotate(glm::radians(-delta.x) * ROTATIONAL_SPEED, up) * 
+						glm::rotate(glm::radians(-delta.y) * ROTATIONAL_SPEED, glm::cross(viewDirection, up)) * 
 						glm::vec4(viewDirection, 1.0f);
 	}
 
