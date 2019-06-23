@@ -18,7 +18,7 @@ GLuint programId;
 GLubyte numArrowIndices;
 GLubyte numCubeIndices;
 GLuint numArrows = 3;
-GLuint numCubes = 2;
+GLuint numCubes = 3;
 
 void GlWindow::sendDataToOpenGL() {
 
@@ -45,6 +45,14 @@ void GlWindow::sendDataToOpenGL() {
 	glBufferData(GL_ARRAY_BUFFER, cube->colorBufferSize(), cube->colorData(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, cubeVertexTranslateBufferId);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(mat4) * numCubes, 0, GL_DYNAMIC_DRAW);
+	for (GLuint i = 0; i < 4; ++i) {
+		glEnableVertexAttribArray(i + 2);
+		glVertexAttribPointer(i + 2, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), (void*)(sizeof(GLfloat) * i * 4));
+		glVertexAttribDivisor(i + 2, 1);
+	}
 
 	// specify indices of the vertex array to draw
 	glGenBuffers(1, &cubeIndexBufferId);
@@ -76,6 +84,14 @@ void GlWindow::sendDataToOpenGL() {
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
+	glBindBuffer(GL_ARRAY_BUFFER, arrowVertexTranslateBufferId);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(mat4) * numArrows, 0, GL_DYNAMIC_DRAW);
+	for (GLuint i = 0; i < 4; ++i) {
+		glEnableVertexAttribArray(i + 2);
+		glVertexAttribPointer(i + 2, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), (void*)(sizeof(GLfloat) * i * 4));
+		glVertexAttribDivisor(i + 2, 1);
+	}
+
 	// specify indices of the vertex array to draw
 	glGenBuffers(1, &arrowIndexBufferId);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, arrowIndexBufferId);
@@ -90,39 +106,31 @@ void GlWindow::paintGL()
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	glViewport(0, 0, width(), height());
 
-	GLint fullTransformMatrixUniformLocation =
-		glGetUniformLocation(programId, "fullTransformMatrix");
-
 	// prepare matrices to send to the vertex shader
 	mat4 projectionMatrix = glm::perspective(glm::radians(80.0f), float(width()) / height(), 0.1f, 10.0f);
 	mat4 worldToProjectionMatrix = projectionMatrix * camera.getWorldToViewMatrix();
 
-	mat4 cube1ModelToWorldMatrix = glm::translate(vec3(-5.0f, 1.0f, -3.75f)) * 
-								   glm::rotate(glm::radians(26.0f), vec3(0.0f, 0.0f, 1.0f));
-
-	mat4 fullTransformMatrix = worldToProjectionMatrix * cube1ModelToWorldMatrix;
-
 	// Cube
 	glBindVertexArray(VAO[0]);
-	glUniformMatrix4fv(fullTransformMatrixUniformLocation, 1, GL_FALSE, &fullTransformMatrix[0][0]);
-	glDrawElements(GL_TRIANGLES, numCubeIndices, GL_UNSIGNED_BYTE, 0);
 
-	mat4 cube2ModelToWorldMatrix = glm::translate(vec3(-3.0f, 0.0f, -2.75f)) *
-								   glm::rotate(glm::radians(30.0f), vec3(0.0f, 1.0f, 0.0f));
-
-	fullTransformMatrix = worldToProjectionMatrix * cube2ModelToWorldMatrix;
-
-	glUniformMatrix4fv(fullTransformMatrixUniformLocation, 1, GL_FALSE, &fullTransformMatrix[0][0]);
-	glDrawElements(GL_TRIANGLES, numCubeIndices, GL_UNSIGNED_BYTE, 0);
+	mat4 translateCubes[] = {
+		worldToProjectionMatrix * glm::translate(vec3(-5.0f, 1.0f, -3.75f)) * glm::rotate(glm::radians(26.0f), vec3(0.0f, 0.0f, 1.0f)),
+		worldToProjectionMatrix * glm::translate(vec3(-1.0f, 2.0f, -2.75f)) * glm::rotate(glm::radians(76.0f), vec3(0.0f, 0.0f, 1.0f)),
+		worldToProjectionMatrix* glm::translate(vec3(2.0f, -2.0f, -2.75f)) * glm::rotate(glm::radians(63.0f), vec3(0.0f, 1.0f, 1.0f))
+	};
+	glBufferData(GL_ARRAY_BUFFER, sizeof(translateCubes), translateCubes, GL_DYNAMIC_DRAW);
+	glDrawElementsInstanced(GL_TRIANGLES, numCubeIndices, GL_UNSIGNED_BYTE, 0, numCubes);
 
 	// Arrow
 	glBindVertexArray(VAO[1]);
 
-	mat4 arrowModelToWorldMatrix = glm::translate(vec3(3.0f, 0.0f, -3.0f));
-	fullTransformMatrix = worldToProjectionMatrix * arrowModelToWorldMatrix;
-
-	glUniformMatrix4fv(fullTransformMatrixUniformLocation, 1, GL_FALSE, &fullTransformMatrix[0][0]);
-	glDrawElements(GL_TRIANGLES, numArrowIndices, GL_UNSIGNED_BYTE, 0);
+	mat4 translateArrows[] = {
+			worldToProjectionMatrix * glm::translate(vec3(-1.0f, 0.0f, -3.0f)) * glm::rotate(glm::radians(36.0f), vec3(1.0f, 0.0f, 0.0f)),
+			worldToProjectionMatrix * glm::translate(vec3(3.0f, 2.0f, -3.75f)) * glm::rotate(glm::radians(126.0f), vec3(0.0f, 1.0f, 0.0f)),
+			worldToProjectionMatrix * glm::translate(vec3(5.0f, -2.0f, -0.75f)) * glm::rotate(glm::radians(126.0f), vec3(0.0f, 1.0f, 0.0f))
+	};
+	glBufferData(GL_ARRAY_BUFFER, sizeof(translateArrows), translateArrows, GL_DYNAMIC_DRAW);
+	glDrawElementsInstanced(GL_TRIANGLES, numArrowIndices, GL_UNSIGNED_BYTE, 0, numArrows);
 }
 
 void GlWindow::mouseMoveEvent(QMouseEvent* e) {

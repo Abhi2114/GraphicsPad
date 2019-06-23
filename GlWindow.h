@@ -13,10 +13,12 @@ class GlWindow : public QOpenGLWidget
 
 	GLuint arrowVertexPositionBufferId;
 	GLuint arrowVertexColorBufferId;
+	GLuint arrowVertexTranslateBufferId;
 	GLuint arrowIndexBufferId;
 
 	GLuint cubeVertexPositionBufferId;
 	GLuint cubeVertexColorBufferId;
+	GLuint cubeVertexTranslateBufferId;
 	GLuint cubeIndexBufferId;
 
 	GLuint VAO[2];
