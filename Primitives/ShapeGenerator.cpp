@@ -326,3 +326,4 @@ ShapeData* ShapeGenerator::makeArrow()
 
 	return arrow;
 }
+
