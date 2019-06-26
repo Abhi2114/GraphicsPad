@@ -20,7 +20,6 @@ class GlWindow : public QOpenGLWidget
 
 	Camera camera;
 
-	void setupVertexArrays();
 	void sendDataToOpenGL();
 	void installShaders();
 	std::string readShaderCode(const GLchar*);

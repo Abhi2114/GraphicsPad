@@ -14,30 +14,30 @@ class ShapeData {
 	Color* colors;
 	GLuint numVertices;  // number of vertices = number of colors
 
-	GLubyte* indices;
-	GLubyte numIndices;  // only 256 unique vertices
+	GLushort* indices;
+	GLuint numIndices;  // only 256 unique vertices
 
 public:
 
-	ShapeData(): positions(nullptr), colors(nullptr), 
-				 numVertices(0), indices(nullptr),
-				 numIndices(0) {}
+	ShapeData() : positions(nullptr), colors(nullptr),
+		numVertices(0), indices(nullptr),
+		numIndices(0) {}
 
 	GLsizeiptr positionBufferSize() const { return numVertices * sizeof(Position); }
 
 	GLsizeiptr colorBufferSize() const { return numVertices * sizeof(Color); }
 
-	GLsizeiptr indexBufferSize() const { return numIndices * sizeof(GLubyte); }
+	GLsizeiptr indexBufferSize() const { return numIndices * sizeof(GLushort); }
 
 	Position* positionData() const { return positions; }
 
 	Color* colorData() const { return colors; }
 
-	GLubyte* indexData() const { return indices; }
+	GLushort* indexData() const { return indices; }
 
-	GLubyte getNumIndices() const { return numIndices; }
+	GLuint getNumIndices() const { return numIndices; }
 
-	~ShapeData() { 
+	~ShapeData() {
 		delete[] positions;
 		delete[] indices;
 		delete[] colors;

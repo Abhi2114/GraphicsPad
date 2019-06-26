@@ -167,6 +167,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="GlWindow.h" />
     <ClInclude Include="Primitives\ShapeData.h" />
+    <ClInclude Include="Primitives\TeapotData.h" />
     <ClInclude Include="Primitives\Vertex.h" />
     <ClInclude Include="Primitives\ShapeGenerator.h" />
   </ItemGroup>

@@ -10,10 +10,3 @@ struct Position {
 struct Color {
 	vec3 color;
 };
-
-struct Vertex
-{
-	vec3 position;
-	vec3 color;
-	vec3 normal;
-};
