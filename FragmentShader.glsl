@@ -1,9 +1,17 @@
 #version 330
 
 out vec4 daColor;
-in vec3 vertexColor;
+
+uniform vec3 lightPosition;
+uniform vec4 ambientLight;
+
+in vec3 vertexNormal;
+in vec3 vertexPosition;
 
 void main()
-{
-	daColor = vec4(vertexColor, 1.0);
+{	
+	vec3 light = normalize(lightPosition - vertexPosition);
+	float brightness = dot(light, vertexNormal);
+	vec4 diffuseLight = vec4(brightness, brightness, brightness, 1.0);
+	daColor = clamp(diffuseLight, 0, 1) + ambientLight;
 }

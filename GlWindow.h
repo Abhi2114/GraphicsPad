@@ -11,7 +11,7 @@ class GlWindow : public QOpenGLWidget
 {
 	Q_OBJECT;
 
-	GLuint vertexPositionBufferId;
+	GLuint vertexBufferId;
 	GLuint vertexColorBufferId;
 	GLuint vertexTranslateBufferId;
 	GLuint indexBufferId;
@@ -21,6 +21,7 @@ class GlWindow : public QOpenGLWidget
 	Camera camera;
 
 	void sendDataToOpenGL();
+	void setUpMatrices();
 	void installShaders();
 	std::string readShaderCode(const GLchar*);
 

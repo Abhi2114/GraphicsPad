@@ -18,7 +18,7 @@ glm::vec3 randomColor()
 // cleanup the temporary pointers used in various functions
 void ShapeGenerator::cleanUpTemp(ShapeData *tempData) {
 	// set all pointers to null before deleting
-	tempData->positions = nullptr;
+	tempData->vertices = nullptr;
 	tempData->colors = nullptr;
 	tempData->indices = nullptr;
 
@@ -38,7 +38,7 @@ ShapeData * ShapeGenerator::makeTriangle()
 	ShapeData* triangle = new ShapeData();
 
 	// set the vertices of the triangle and also their colors
-	Position positions[] =
+	Vertex vertices[] =
 	{
 		vec3(0.0f, 1.0f, 0.5f),
 		vec3(-1.0f, -1.0f, 0.5f),
@@ -55,10 +55,10 @@ ShapeData * ShapeGenerator::makeTriangle()
 	GLushort indices[] = { 0,1,2 };
 
 	// copy the position and color values
-	triangle->numVertices = ARR_SIZE(positions);
+	triangle->numVertices = ARR_SIZE(vertices);
 
-	triangle->positions = new Position[triangle->numVertices];
-	memcpy(triangle->positions, positions, sizeof(positions));
+	triangle->vertices = new Vertex[triangle->numVertices];
+	memcpy(triangle->vertices, vertices, sizeof(vertices));
 
 	triangle->colors = new Color[triangle->numVertices];
 	memcpy(triangle->colors, colors, sizeof(colors));
@@ -75,7 +75,7 @@ ShapeData* ShapeGenerator::makeCube() {
 
 	ShapeData* cube = new ShapeData();
 
-	Position positions[] = {
+	Vertex vertices[] = {
 		vec3(-1.0f, 1.0f, 1.0f),
 		vec3(1.0f, 1.0f, 1.0f),
 		vec3(1.0f, 1.0f, -1.0f),
@@ -139,9 +139,9 @@ ShapeData* ShapeGenerator::makeCube() {
 		vec3(0.9f, 1.0f, 0.2f),
 	};
 
-	cube->numVertices = ARR_SIZE(positions);
-	cube->positions = new Position[cube->numVertices];
-	memcpy(cube->positions, positions, sizeof(positions));
+	cube->numVertices = ARR_SIZE(vertices);
+	cube->vertices = new Vertex[cube->numVertices];
+	memcpy(cube->vertices, vertices, sizeof(vertices));
 
 	cube->colors = new Color[cube->numVertices];
 	memcpy(cube->colors, colors, sizeof(colors));
@@ -325,19 +325,24 @@ ShapeData * ShapeGenerator::makeArrow()
 	};
 
 	GLuint sVsize = sizeof(stackVerts) / sizeof(stackVerts[0]);
-	Position * positions = new Position[sVsize / 3];
+	Vertex * vertices = new Vertex[sVsize / 3];
 	Color * colors = new Color[sVsize / 3];
 
+	Vertex *vertex = nullptr;
 	// ignore the normal values in stackVerts
 	for (GLuint i = 0; i < sVsize; ++i) {
-		if (i % 3 == 0)
-			positions[i / 3].position = stackVerts[i];
+		if (i % 3 == 0) {
+			vertex = &vertices[i / 3];
+			vertex->position = stackVerts[i];
+		}
 		else if (i % 3 == 1)
 			colors[(i - 1) / 3].color = stackVerts[i];
+		else
+			vertex->normal = stackVerts[i];
 	}
 
 	arrow->numVertices = sVsize / 3;
-	arrow->positions = positions;
+	arrow->vertices = vertices;
 	arrow->colors = colors;
 
 	arrow->numIndices = ARR_SIZE(stackIndices);
@@ -353,18 +358,19 @@ ShapeData* ShapeGenerator::makePlaneVerts(GLint dimensions)
 
 	ret->numVertices = dimensions * dimensions;
 	int half = dimensions / 2;
-	ret->positions = new Position[ret->numVertices];
+	ret->vertices = new Vertex[ret->numVertices];
 	ret->colors = new Color[ret->numVertices];
 
 	for (int i = 0; i < dimensions; i++)
 	{
 		for (int j = 0; j < dimensions; j++)
 		{
-			Position& thisVert = ret->positions[i * dimensions + j];
+			Vertex& thisVert = ret->vertices[i * dimensions + j];
 			Color& thisColor = ret->colors[i * dimensions + j];
 			thisVert.position.x = GLfloat(j - half);
 			thisVert.position.z = GLfloat(i - half);
 			thisVert.position.y = 0.0f;
+			thisVert.normal = vec3(0.0f, 1.0f, 0.0f);
 			thisColor.color = randomColor();
 		}
 	}
@@ -428,7 +434,7 @@ ShapeData* ShapeGenerator::makeSphere(GLint tesselation)
 		{
 			GLfloat theta = GLfloat(-(SLICE_ANGLE / 2.0) * row);
 			GLint vertIndex = col * dimensions + row;
-			Position& v = ret->positions[vertIndex];
+			Vertex& v = ret->vertices[vertIndex];
 			v.position.x = RADIUS * cos(phi) * sin(theta);
 			v.position.y = RADIUS * sin(phi) * sin(theta);
 			v.position.z = RADIUS * cos(theta);
@@ -498,7 +504,7 @@ ShapeData* ShapeGenerator::makeTorus(GLint tesselation)
 	ShapeData* ret = new ShapeData();
 	GLint dimensions = tesselation * tesselation;
 	ret->numVertices = dimensions;
-	ret->positions = new Position[ret->numVertices];
+	ret->vertices = new Vertex[ret->numVertices];
 	ret->colors = new Color[ret->numVertices];
 
 	float sliceAngle = 360 / tesselation;
@@ -513,7 +519,7 @@ ShapeData* ShapeGenerator::makeTorus(GLint tesselation)
 		glm::mat3 normalTransform = (glm::mat3)transform;
 		for (GLint round2 = 0; round2 < tesselation; round2++)
 		{
-			Position& v = ret->positions[round1 * tesselation + round2];
+			Vertex& v = ret->vertices[round1 * tesselation + round2];
 			Color& c = ret->colors[round1 * tesselation + round2];
 			glm::vec4 glmVert(
 				pipeRadius * cos(glm::radians(sliceAngle * round2)),
@@ -522,6 +528,7 @@ ShapeData* ShapeGenerator::makeTorus(GLint tesselation)
 				1.0f);
 			glm::vec4 glmVertPrime = transform * glmVert;
 			v.position = (glm::vec3)glmVertPrime;
+			v.normal = glm::normalize(normalTransform * (glm::vec3)glmVert);
 			c.color = randomColor();
 		}
 	}
@@ -551,16 +558,19 @@ ShapeData* ShapeGenerator::makeTeapot(GLint tesselation, const glm::mat4& lidTra
 	moveLid(tesselation, vertices, lidTransform);
 
 	// Adapt/convert their data format to mine
-	ret->positions = new Position[ret->numVertices];
+	ret->vertices = new Vertex[ret->numVertices];
 	ret->colors = new Color[ret->numVertices];
 
 	for (GLuint i = 0; i < ret->numVertices; i++)
 	{
-		Position& v = ret->positions[i];
+		Vertex& v = ret->vertices[i];
 		Color& c = ret->colors[i];
 		v.position.x = vertices[i * 3 + 0];
 		v.position.y = vertices[i * 3 + 1];
 		v.position.z = vertices[i * 3 + 2];
+		v.normal.x = normals[i * 3 + 0];
+		v.normal.y = normals[i * 3 + 1];
+		v.normal.z = normals[i * 3 + 2];
 		c.color = randomColor();
 	}
 

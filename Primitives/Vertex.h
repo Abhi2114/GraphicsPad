@@ -3,8 +3,9 @@
 
 using glm::vec3;
 
-struct Position {
+struct Vertex {
 	vec3 position;
+	vec3 normal;
 };
 
 struct Color {

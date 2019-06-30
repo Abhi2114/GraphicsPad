@@ -21,16 +21,30 @@ GLuint numShape1 = 1;
 GLuint numShape2 = 1;
 GLsizeiptr shape1Offset;
 
+mat4 rotateShape1;
+mat4 translateShape1;
+mat4 scaleShape1;
+mat4 rotateShape1Normals;
+mat4 rotateShape2;
+mat4 scaleShape2;
+mat4 translateShape2;
+mat4 rotateShape2Normals;
+
+vec3 lightPosition(-3.0f, -1.5f, 0.0f);
+
 void GlWindow::sendDataToOpenGL() {
 
 	ShapeData* shape1 = ShapeGenerator::makePlane();
-	ShapeData* shape2 = ShapeGenerator::makeTeapot(30);
+	ShapeData* shape2 = ShapeGenerator::makeTeapot(40);
 
-	// reserve some space for the positions buffer on the graphics card
-	glGenBuffers(1, &vertexPositionBufferId);
-	// read in the positions information
-	glBindBuffer(GL_ARRAY_BUFFER, vertexPositionBufferId);
-	glBufferData(GL_ARRAY_BUFFER, shape1->positionBufferSize() + shape2->positionBufferSize(), 0, GL_STATIC_DRAW);
+	// shape1->transformNormals(rotateShape1);
+	// shape2->transformNormals(rotateShape2);
+
+	// reserve some space for the vertices buffer on the graphics card
+	glGenBuffers(1, &vertexBufferId);
+	// read in the vertices information
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferId);
+	glBufferData(GL_ARRAY_BUFFER, shape1->vertexBufferSize() + shape2->vertexBufferSize(), 0, GL_STATIC_DRAW);
 
 	// reserve some space for the colors buffer on the graphics card
 	glGenBuffers(1, &vertexColorBufferId);
@@ -54,11 +68,13 @@ void GlWindow::sendDataToOpenGL() {
 	// bind the shape1
 	glBindVertexArray(VAO[0]);
 
-	// position
-	glBindBuffer(GL_ARRAY_BUFFER, vertexPositionBufferId);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, shape1->positionBufferSize(), shape1->positionData());
+	// position and normal
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferId);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, shape1->vertexBufferSize(), shape1->vertexData());
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, 0);
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, reinterpret_cast<void*>(sizeof(GLfloat) * 3));
 
 	// color
 	glBindBuffer(GL_ARRAY_BUFFER, vertexColorBufferId);
@@ -69,9 +85,9 @@ void GlWindow::sendDataToOpenGL() {
 	// translate
 	glBindBuffer(GL_ARRAY_BUFFER, vertexTranslateBufferId);
 	for (GLuint i = 0; i < 4; ++i) {
-		glEnableVertexAttribArray(i + 2);
-		glVertexAttribPointer(i + 2, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), reinterpret_cast<void*>(sizeof(GLfloat) * i * 4));
-		glVertexAttribDivisor(i + 2, 1);
+		glEnableVertexAttribArray(i + 3);
+		glVertexAttribPointer(i + 3, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), reinterpret_cast<void*>(sizeof(GLfloat) * i * 4));
+		glVertexAttribDivisor(i + 3, 1);
 	}
 
 	// index
@@ -81,11 +97,13 @@ void GlWindow::sendDataToOpenGL() {
 	// bind the shape2
 	glBindVertexArray(VAO[1]);
 
-	// position
-	glBindBuffer(GL_ARRAY_BUFFER, vertexPositionBufferId);
-	glBufferSubData(GL_ARRAY_BUFFER, shape1->positionBufferSize(), shape2->positionBufferSize(), shape2->positionData());
+	// position and normal
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferId);
+	glBufferSubData(GL_ARRAY_BUFFER, shape1->vertexBufferSize(), shape2->vertexBufferSize(), shape2->vertexData());
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<void*>(shape1->positionBufferSize()));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, reinterpret_cast<void*>(shape1->vertexBufferSize()));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, reinterpret_cast<void*>(shape1->vertexBufferSize() + sizeof(GLfloat) * 3));
 
 	// color
 	glBindBuffer(GL_ARRAY_BUFFER, vertexColorBufferId);
@@ -96,9 +114,9 @@ void GlWindow::sendDataToOpenGL() {
 	// translate
 	glBindBuffer(GL_ARRAY_BUFFER, vertexTranslateBufferId);
 	for (GLuint i = 0; i < 4; ++i) {
-		glEnableVertexAttribArray(i + 2);
-		glVertexAttribPointer(i + 2, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), reinterpret_cast<void*>(sizeof(mat4) * numShape1 + (sizeof(GLfloat) * i * 4)));
-		glVertexAttribDivisor(i + 2, 1);
+		glEnableVertexAttribArray(i + 3);
+		glVertexAttribPointer(i + 3, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), reinterpret_cast<void*>(sizeof(mat4) * numShape1 + (sizeof(GLfloat) * i * 4)));
+		glVertexAttribDivisor(i + 3, 1);
 	}
 
 	// index
@@ -111,6 +129,24 @@ void GlWindow::sendDataToOpenGL() {
 	delete shape2;
 }
 
+// setup the rotation matrices for the vertices and normals
+void GlWindow::setUpMatrices() {
+
+	// rotateShape1 = glm::rotate(glm::radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
+	rotateShape1 = mat4(1.0);
+	scaleShape1 = glm::scale(vec3(1.0f, 1.0f, 1.0f));
+	translateShape1 = glm::translate(vec3(0.0f, -2.0f, 0.0f));
+	rotateShape1Normals = glm::transpose(glm::inverse(translateShape1 * rotateShape1));
+
+	rotateShape2 = glm::rotate(glm::radians(-90.0f), vec3(0.0f, 1.0f, 0.0f)) * 
+				   glm::rotate(glm::radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
+	// rotateShape2 = mat4(1.0);
+	scaleShape2 = glm::scale(vec3(1.0f, 1.0f, 1.0f));
+	// scaleShape2 = glm::scale(vec3(1.0f, 1.0f, 1.0f));
+	translateShape2 = glm::translate(vec3(0.0f, -2.0f, 0.0f));
+	rotateShape2Normals = glm::transpose(glm::inverse(translateShape2 * rotateShape2));
+}
+
 void GlWindow::paintGL()
 {
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -120,24 +156,38 @@ void GlWindow::paintGL()
 	mat4 projectionMatrix = glm::perspective(glm::radians(80.0f), float(width()) / height(), 0.1f, 20.0f);
 	mat4 worldToProjectionMatrix = projectionMatrix * camera.getWorldToViewMatrix();
 
+	mat4 modelToWorldMatrix = translateShape1 * rotateShape1 * scaleShape1;
+
+	vec4 ambientLight(0.2f, 0.2f, 0.2f, 1.0f);
+
 	// translations for shape 1
 	mat4 translateShape1[] = {
-		worldToProjectionMatrix * glm::translate(vec3(0.0f, 0.0f, -3.0f)) * glm::rotate(glm::radians(26.0f), vec3(0.0f, 1.0f, 0.0f)),
+		worldToProjectionMatrix * modelToWorldMatrix,
 	};
+	
+	GLint lightPositionUniformLocation = glGetUniformLocation(programId, "lightPosition");
+	glUniform3f(lightPositionUniformLocation, lightPosition.x, lightPosition.y, lightPosition.z);
 
-	// translations for shape 2
-	mat4 translateShape2[] = {
-		worldToProjectionMatrix * glm::translate(vec3(0.0f, 0.0f, -3.0f)) * glm::rotate(glm::radians(-90.0f), vec3(1.0f, 0.0f, 0.0f)),
-	};
+	GLint modelToWorldMatrixUniformLocation = glGetUniformLocation(programId, "modelToWorldMatrix");
+	glUniformMatrix4fv(modelToWorldMatrixUniformLocation, 1, GL_FALSE, &modelToWorldMatrix[0][0]);
 
 	GLint ambientLightUniformLocation = glGetUniformLocation(programId, "ambientLight");
-	vec3 ambientLight(0.1f, 0.9f, 1.0f);
-	glUniform3f(ambientLightUniformLocation, ambientLight.x, ambientLight.y, ambientLight.z);
+	glUniform4f(ambientLightUniformLocation, ambientLight.x, ambientLight.y, ambientLight.z, ambientLight.w);
 
 	// Shape 1
 	glBindVertexArray(VAO[0]);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(translateShape1), translateShape1);
 	glDrawElementsInstanced(GL_TRIANGLES, numShape1Indices, GL_UNSIGNED_SHORT, 0, numShape1);
+
+	modelToWorldMatrix = translateShape2 * rotateShape2 * scaleShape2;
+
+	// translations for shape 2
+	mat4 translateShape2[] = {
+		// worldToProjectionMatrix* glm::translate(vec3(0.0f, 0.5f, -3.0f))
+		worldToProjectionMatrix * modelToWorldMatrix,
+	};
+
+	glUniformMatrix4fv(modelToWorldMatrixUniformLocation, 1, GL_FALSE, &modelToWorldMatrix[0][0]);
 
 	// Shape 2
 	glBindVertexArray(VAO[1]);
@@ -175,6 +225,21 @@ void GlWindow::keyPressEvent(QKeyEvent * e) {
 		break;
 	case Qt::Key::Key_F:
 		camera.moveDown();
+		break;
+	case Qt::Key::Key_Left:
+		// left, decrement by 1
+		lightPosition.x--;
+		break;
+	case Qt::Key::Key_Right:
+		// right, increment by 1
+		lightPosition.x++;
+		break;
+	case Qt::Key::Key_Up:
+		// up
+		lightPosition.y++;
+		break;
+	case Qt::Key::Key_Down:
+		lightPosition.y--;
 		break;
 	default:
 		shouldRepaint = false;
@@ -296,6 +361,9 @@ void GlWindow::initializeGL()
 
 	glEnable(GL_DEPTH_TEST);  // enable depth test
 	glEnable(GL_CULL_FACE);
+
+	setUpMatrices();
+
 	sendDataToOpenGL();
 	installShaders();
 }
@@ -306,7 +374,7 @@ GlWindow::~GlWindow() {
 	glDeleteVertexArrays(1, VAO);
 
 	// delete all the buffers when done
-	glDeleteBuffers(1, &vertexPositionBufferId);
+	glDeleteBuffers(1, &vertexBufferId);
 	glDeleteBuffers(1, &vertexColorBufferId);
 	glDeleteBuffers(1, &vertexTranslateBufferId);
 	glDeleteBuffers(1, &indexBufferId);

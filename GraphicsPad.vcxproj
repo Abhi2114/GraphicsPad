@@ -161,6 +161,7 @@
     <ClCompile Include="GlWindow.cpp" />
     <ClCompile Include="GlWindow_moc.cpp" />
     <ClCompile Include="GraphicsPad.cpp" />
+    <ClCompile Include="Primitives\ShapeData.cpp" />
     <ClCompile Include="Primitives\ShapeGenerator.cpp" />
   </ItemGroup>
   <ItemGroup>

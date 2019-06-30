@@ -4,13 +4,13 @@
 #include "Vertex.h"
 #include <iostream>
 
-struct Position;
+struct Vertex;
 struct Color;
 class ShapeGenerator;
 
 class ShapeData {
 
-	Position* positions;
+	Vertex* vertices;
 	Color* colors;
 	GLuint numVertices;  // number of vertices = number of colors
 
@@ -19,17 +19,17 @@ class ShapeData {
 
 public:
 
-	ShapeData() : positions(nullptr), colors(nullptr),
+	ShapeData() : vertices(nullptr), colors(nullptr),
 		numVertices(0), indices(nullptr),
 		numIndices(0) {}
 
-	GLsizeiptr positionBufferSize() const { return numVertices * sizeof(Position); }
+	GLsizeiptr vertexBufferSize() const { return numVertices * sizeof(Vertex); }
 
 	GLsizeiptr colorBufferSize() const { return numVertices * sizeof(Color); }
 
 	GLsizeiptr indexBufferSize() const { return numIndices * sizeof(GLushort); }
 
-	Position* positionData() const { return positions; }
+	Vertex* vertexData() const { return vertices; }
 
 	Color* colorData() const { return colors; }
 
@@ -37,8 +37,10 @@ public:
 
 	GLuint getNumIndices() const { return numIndices; }
 
+	void transformNormals(const glm::mat4& rotationMatrix);
+	
 	~ShapeData() {
-		delete[] positions;
+		delete[] vertices;
 		delete[] indices;
 		delete[] colors;
 	}
